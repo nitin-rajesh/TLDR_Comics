@@ -1,3 +1,8 @@
+import torch
+import os
+from PIL import Image
+from torch.utils.data import Dataset
+
 class FlickrDataset(Dataset):
     def __init__(self, root_folder, captions_file, vocab, transform=None):
         self.root_folder = root_folder

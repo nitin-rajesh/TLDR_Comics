@@ -1,29 +1,41 @@
-import torch
 import os
-from PIL import Image
+import torch
 from torch.utils.data import Dataset
+from PIL import Image
+from torchvision import transforms
 
-class FlickrDataset(Dataset):
-    def __init__(self, root_folder, captions_file, vocab, transform=None):
-        self.root_folder = root_folder
-        self.df = [line.strip().split(',') for line in open(captions_file, 'r') if len(line.strip()) > 0]
-        self.transform = transform
+class Flickr8kDataset(Dataset):
+    def __init__(self, image_dir, captions_file, vocab, transform=None):
+        self.image_dir = image_dir
         self.vocab = vocab
-        self.captions = [line[1] for line in self.df]
-        self.vocab.build_vocab(self.captions)
+        self.transform = transform
+
+        # Load (image, caption) pairs
+        self.data = []
+        with open(captions_file, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line: continue
+                img_name, caption = line.split(',', 1)
+                self.data.append((img_name.strip(), caption.strip()))
 
     def __len__(self):
-        return len(self.df)
+        return len(self.data)
 
     def __getitem__(self, index):
-        img_id, caption = self.df[index]
-        img_path = os.path.join(self.root_folder, img_id)
+        img_name, caption = self.data[index]
+        img_path = os.path.join(self.image_dir, img_name)
+
+        # Load image
         image = Image.open(img_path).convert("RGB")
-        if self.transform:
+        if self.transform is not None:
             image = self.transform(image)
 
-        numericalized_caption = [self.vocab.stoi["<SOS>"]]
-        numericalized_caption += self.vocab.numericalize(caption)
-        numericalized_caption.append(self.vocab.stoi["<EOS>"])
-        
-        return image, torch.tensor(numericalized_caption)
+        # Convert caption to token IDs
+        tokens = self.vocab.tokenize(caption)
+        caption_ids = [self.vocab.stoi["<SOS>"]] + \
+                      [self.vocab.stoi.get(token, self.vocab.stoi["<UNK>"]) for token in tokens] + \
+                      [self.vocab.stoi["<EOS>"]]
+        caption_tensor = torch.tensor(caption_ids)
+
+        return image, caption_tensor

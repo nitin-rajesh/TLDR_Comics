@@ -25,7 +25,7 @@ class Vocabulary:
     def __len__(self):
         return len(self.itos)
 
-    def tokenizer(self, text):
+    def tokenize(self, text):
         return nltk.tokenize.word_tokenize(text.lower())
 
     def build_vocab(self, sentence_list):

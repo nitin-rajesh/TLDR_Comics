@@ -16,12 +16,19 @@ class DecoderGRU(nn.Module):
         self.Wh = nn.Linear(embed_size + hidden_size, hidden_size)
         
         self.fc_out = nn.Linear(hidden_size, vocab_size)
+        print(embed_size)
+        # self.feat2embed = nn.Linear(256, embed_size)
+
 
     def forward(self, features, captions):
         batch_size, seq_len = captions.size()
-        embeddings = self.embedding(captions)  # (B, T, E)
 
         h = features  # initial hidden state from image
+
+        # features = self.feat2embed(features)  
+        # features = features.unsqueeze(1)      
+
+        embeddings = self.embedding(captions)    
 
         outputs = []
         for t in range(seq_len):
